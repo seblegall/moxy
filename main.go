@@ -1,26 +1,31 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func proxy(c *gin.Context) {
-	remote, err := url.Parse("http://blackbeard.ilius.net")
-	if err != nil {
-		panic(err)
-	}
+var (
+	backendUrl string
+	backend *url.URL
+)
 
-	proxy := httputil.NewSingleHostReverseProxy(remote)
+
+func proxy(c *gin.Context) {
+	proxy := httputil.NewSingleHostReverseProxy(backend)
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
-		req.Host = remote.Host
-		req.URL.Scheme = remote.Scheme
-		req.URL.Host = remote.Host
-		req.URL.Path = c.Param("proxyPath")
+		req.Host = backend.Host
+		req.URL.Scheme = backend.Scheme
+		req.URL.Host = backend.Host
+		req.URL.Path = fmt.Sprintf("%s%s", backend.Path, c.Param("proxyPath"))
 	}
 
 	proxy.ServeHTTP(c.Writer, c.Request)
@@ -28,11 +33,29 @@ func proxy(c *gin.Context) {
 
 func main() {
 
+	flag.StringVar(&backendUrl, "backend", "", "the backend url")
+	port := flag.Int("port", 8080, "the exposed port")
+	flag.Parse()
+
+	if backendUrl == "" {
+		log.Fatal("a backend url must be provided. None given.")
+	}
+
+	if u, err := url.Parse(backendUrl); err != nil {
+		log.Fatal("Unable to parse given backend url")
+	} else {
+		backend = u
+	}
+
 	r := gin.Default()
+
+	//CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
+	r.Use(cors.New(corsConfig))
 
 	r.Any("/*proxyPath", proxy)
 
-	r.Run(":8080")
+	r.Run(fmt.Sprintf(":%d", *port))
 }
-
-//http://slegall.www.meetic.fr.kube.recette.ilius.io/
