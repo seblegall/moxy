@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -15,9 +16,66 @@ import (
 var (
 	backendUrl string
 	backend *url.URL
+	mockList []mock
 )
 
+type mock struct {
+	Path string `json:"path"`
+	StatusCode int `json:"status_code"`
+	Body json.RawMessage `json:"body"`
+}
 
+func main() {
+
+	//Read configuration from flag
+	flag.StringVar(&backendUrl, "backend", "", "the backend url")
+	port := flag.Int("port", 8080, "the exposed port")
+	flag.Parse()
+
+	//Parse backend url
+	if backendUrl == "" {
+		log.Fatal("a backend url must be provided. None given.")
+	}
+
+	if u, err := url.Parse(backendUrl); err != nil {
+		log.Fatal("Unable to parse given backend url")
+	} else {
+		backend = u
+	}
+
+	r := gin.Default()
+	//CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
+	r.Use(cors.New(corsConfig))
+
+	r.Any("/*proxyPath", handleMoxy)
+
+	r.Run(fmt.Sprintf(":%d", *port))
+}
+
+
+func handleMoxy(c *gin.Context) {
+
+	//catch mock management routes
+	if handleMock(c) {
+		return
+	}
+
+	//if path match mock, return the mock
+	for _, m := range mockList {
+		if m.Path == c.Request.URL.Path {
+			c.Data(m.StatusCode, "text/json", m.Body)
+			return
+		}
+	}
+
+	//Else proxify the request to the backend
+	proxy(c)
+}
+
+//proxy proxify a request to the backend
 func proxy(c *gin.Context) {
 	proxy := httputil.NewSingleHostReverseProxy(backend)
 	proxy.Director = func(req *http.Request) {
@@ -31,31 +89,44 @@ func proxy(c *gin.Context) {
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
-func main() {
+func handleMock(c *gin.Context) bool {
 
-	flag.StringVar(&backendUrl, "backend", "", "the backend url")
-	port := flag.Int("port", 8080, "the exposed port")
-	flag.Parse()
-
-	if backendUrl == "" {
-		log.Fatal("a backend url must be provided. None given.")
+	if c.Request.URL.Path == "/mocks" && c.Request.Method == http.MethodPost {
+		addMock(c)
+		return true
 	}
 
-	if u, err := url.Parse(backendUrl); err != nil {
-		log.Fatal("Unable to parse given backend url")
-	} else {
-		backend = u
+	if c.Request.URL.Path == "/mocks" && c.Request.Method == http.MethodGet {
+		listMock(c)
+		return true
 	}
 
-	r := gin.Default()
+	return false
+}
 
-	//CORS
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = true
-	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
-	r.Use(cors.New(corsConfig))
+func listMock(c *gin.Context) {
+	c.JSON(http.StatusOK, mockList)
+}
 
-	r.Any("/*proxyPath", proxy)
 
-	r.Run(fmt.Sprintf(":%d", *port))
+func addMock(c *gin.Context) {
+
+	type mockRequest struct {
+		StatusCode int `json:"status_code"`
+		Body json.RawMessage `json:"body"`
+	}
+
+	var query mockRequest
+	if err := c.BindJSON(&query); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+
+	mockList = append(mockList, mock{
+		Path: c.Request.URL.Path,
+		StatusCode: query.StatusCode,
+		Body: query.Body,
+	})
+
+	c.Status(http.StatusCreated)
 }
