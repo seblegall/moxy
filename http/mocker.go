@@ -9,11 +9,11 @@ import (
 
 func (h *handler) handleMocker(c *gin.Context) {
 
-	if c.Request.URL.Path == "/mocks" && c.Request.Method == http.MethodPost {
+	if c.Request.URL.Path == "/moxy/mocks" && c.Request.Method == http.MethodPost {
 		h.addMock(c)
 	}
 
-	if c.Request.URL.Path == "/mocks" && c.Request.Method == http.MethodGet {
+	if c.Request.URL.Path == "/moxy/mocks" && c.Request.Method == http.MethodGet {
 		h.listMock(c)
 	}
 
