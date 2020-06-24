@@ -22,31 +22,51 @@ func NewMockService(store Store) *MockService {
 	return &MockService{store:store}
 }
 
-func (m *MockService) List() ([]Mock, error) {
-	return m.store.List()
+func (ms *MockService) List() ([]Mock, error) {
+	return ms.store.List()
 }
 
-func (m *MockService) Get(method, path string) (Mock, error) {
+func (ms *MockService) Get(method, path string) (Mock, error) {
 	p := strings.TrimLeft(pa.Clean(path), "/")
-	return m.store.Get(strings.ToUpper(method), p)
+	return ms.store.Get(strings.ToUpper(method), p)
 }
 
 
-func (m *MockService) Add(method, path string, status int, body json.RawMessage) (Mock, error) {
+func (ms *MockService) Add(method, path string, status int, body json.RawMessage) (Mock, error) {
 
 	meth := strings.ToUpper(method)
-
 	if !isMethodValid(meth) {
 		return Mock{}, fmt.Errorf(InvalidMethod)
 	}
 
+	if path == "" {
+		return Mock{}, fmt.Errorf("path cannot be empty")
+	}
+
 	mock := NewMock(meth, strings.TrimLeft(pa.Clean(path), "/"), status, body)
-	err := m.store.Add(mock)
+	err := ms.store.Add(mock)
 	if err != nil {
 		return Mock{}, err
 	}
 
 	return mock, nil
+}
+
+func (ms *MockService) Load(rawMocks []byte) error {
+
+	var mocks []Mock
+	if err := json.Unmarshal(rawMocks, &mocks); err != nil {
+		return err
+	}
+
+	for i, mock := range mocks {
+		_, err := ms.Add(mock.Method, mock.Path, mock.StatusCode, mock.Body)
+		if err != nil {
+			return fmt.Errorf("error when importing mock #%d : %s", i, err.Error())
+		}
+	}
+
+	return nil
 }
 
 func isMethodValid(method string) bool {
