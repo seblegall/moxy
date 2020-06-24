@@ -28,6 +28,7 @@ func main() {
 
 	mock := api.NewMockService(store.NewMap())
 
+	//Load mocks from file
 	if *file != "" {
 		f, err := os.Open(*file)
 		if err != nil {
