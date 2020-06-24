@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -17,16 +16,10 @@ import (
 type handler struct {
 	engine *gin.Engine
 	backend config.Backend
-	mockService mockService
+	mockService *api.MockService
 }
 
-type mockService interface {
-	List() ([]api.Mock, error)
-	Get(string, string) (api.Mock, error)
-	Add(string, string, int, json.RawMessage) (api.Mock, error)
-}
-
-func NewHandler(mock mockService, backend config.Backend) *handler {
+func NewHandler(mock *api.MockService, backend config.Backend) *handler {
 	h := &handler{
 		engine:      gin.Default(),
 		backend: backend,
