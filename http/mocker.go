@@ -21,22 +21,22 @@ func (h *handler) handleMocker(c *gin.Context) {
 
 func (h *handler) addMock(c *gin.Context) {
 	type mockRequest struct {
-		Path string `json:"path"`
-		Method string `json:"method"`
-		StatusCode int `json:"status_code"`
-		Body json.RawMessage `json:"body"`
+		Path string `json:"path"  binding:"required"`
+		Method string `json:"method"  binding:"required"`
+		StatusCode int `json:"status_code"  binding:"required"`
+		Body json.RawMessage `json:"body"  binding:"required"`
 	}
 
 	var query mockRequest
-	if err := c.BindJSON(&query); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		c.Abort()
 		return
 	}
 
 	mock, err := h.mockService.Add(query.Method, query.Path, query.StatusCode,query.Body)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		c.Abort()
 		return
 	}

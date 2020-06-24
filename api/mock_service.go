@@ -1,6 +1,12 @@
 package api
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	pa "path"
+	"strings"
+)
 
 type Store interface {
 	List() ([]Mock, error)
@@ -21,18 +27,35 @@ func (m *MockService) List() ([]Mock, error) {
 }
 
 func (m *MockService) Get(method, path string) (Mock, error) {
-	return m.store.Get(method, path)
+	p := strings.TrimLeft(pa.Clean(path), "/")
+	return m.store.Get(strings.ToUpper(method), p)
 }
 
 
 func (m *MockService) Add(method, path string, status int, body json.RawMessage) (Mock, error) {
-	mock := NewMock(method, path, status, body)
+
+	meth := strings.ToUpper(method)
+
+	if !isMethodValid(meth) {
+		return Mock{}, fmt.Errorf(InvalidMethod)
+	}
+
+	mock := NewMock(meth, strings.TrimLeft(pa.Clean(path), "/"), status, body)
 	err := m.store.Add(mock)
 	if err != nil {
 		return Mock{}, err
 	}
 
 	return mock, nil
+}
 
+func isMethodValid(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete:
+		return true
+	default:
+		return false
+	
+	}
 }
 

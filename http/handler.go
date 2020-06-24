@@ -46,7 +46,6 @@ func NewHandler(mock mockService, backend config.Backend) *handler {
 }
 
 func (h *handler) handleMock(c *gin.Context) {
-
 	mock, err := h.mockService.Get(c.Request.Method, c.Request.URL.Path)
 	if err == nil {
 		c.Data(mock.StatusCode, "text/json", mock.Body)
