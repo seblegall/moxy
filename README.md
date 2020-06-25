@@ -24,4 +24,12 @@ you were calling them.
 moxy -backend=http://mydomain.com -port=8080
 ```
 
-The `backend` flag is mandatory. The `port` flag has a default value (8080).
+* The `backend` flag is mandatory.
+* The `port` flag has a default value (8080).
+
+
+## Docker usage
+
+```sh
+docker run -p 8080:8080 -it -e MOXY_BACKEND=http://mydomain moxy
+```
