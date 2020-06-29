@@ -13,14 +13,14 @@ import (
 
 
 
-type handler struct {
+type proxyHandler struct {
 	engine *gin.Engine
 	backend config.Backend
 	mockService *api.MockService
 }
 
-func NewHandler(mock *api.MockService, backend config.Backend) *handler {
-	h := &handler{
+func NewProxyHandler(mock *api.MockService, backend config.Backend) *proxyHandler {
+	h := &proxyHandler{
 		engine:      gin.Default(),
 		backend: backend,
 		mockService: mock,
@@ -33,12 +33,12 @@ func NewHandler(mock *api.MockService, backend config.Backend) *handler {
 	h.engine.Use(cors.New(corsConfig))
 	h.engine.Use()
 
-	h.engine.Any("/*proxyPath", h.handleMocker, h.handleMock, h.handleProxy)
+	h.engine.Any("/*proxyPath", h.handleMock, h.handleProxy)
 
 	return h
 }
 
-func (h *handler) handleMock(c *gin.Context) {
+func (h *proxyHandler) handleMock(c *gin.Context) {
 	mock, err := h.mockService.Get(c.Request.Method, c.Request.URL.Path)
 	if err == nil {
 		c.Data(mock.StatusCode, "text/json", mock.Body)
@@ -47,7 +47,7 @@ func (h *handler) handleMock(c *gin.Context) {
 }
 
 //proxy proxify a request to the backend
-func (h *handler) handleProxy(c *gin.Context) {
+func (h *proxyHandler) handleProxy(c *gin.Context) {
 	proxy := httputil.NewSingleHostReverseProxy(h.backend.URL())
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
@@ -58,4 +58,8 @@ func (h *handler) handleProxy(c *gin.Context) {
 	}
 
 	proxy.ServeHTTP(c.Writer, c.Request)
+}
+
+func (h *proxyHandler) Run(addr ...string) (err error) {
+	return h.engine.Run(addr...)
 }

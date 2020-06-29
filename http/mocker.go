@@ -4,22 +4,36 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/seblegall/moxy/api"
 )
 
-func (h *handler) handleMocker(c *gin.Context) {
-
-	if c.Request.URL.Path == "/moxy/mocks" && c.Request.Method == http.MethodPost {
-		h.addMock(c)
-	}
-
-	if c.Request.URL.Path == "/moxy/mocks" && c.Request.Method == http.MethodGet {
-		h.listMock(c)
-	}
-
+type mockerHandler struct {
+	engine *gin.Engine
+	mockService *api.MockService
 }
 
-func (h *handler) addMock(c *gin.Context) {
+func NewMockerHandler(mock *api.MockService) *mockerHandler {
+	h := &mockerHandler{
+		engine:      gin.Default(),
+		mockService: mock,
+	}
+
+	//CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
+	h.engine.Use(cors.New(corsConfig))
+	h.engine.Use()
+
+	h.engine.GET("/moxy/api/mocks", h.listMock)
+	h.engine.POST("/moxy/api/mocks", h.addMock)
+
+	return h
+}
+
+func (h *mockerHandler) addMock(c *gin.Context) {
 	type mockRequest struct {
 		Path string `json:"path"  binding:"required"`
 		Method string `json:"method"  binding:"required"`
@@ -45,7 +59,7 @@ func (h *handler) addMock(c *gin.Context) {
 	c.Abort()
 }
 
-func (h *handler) listMock(c *gin.Context) {
+func (h *mockerHandler) listMock(c *gin.Context) {
 	mocks, err := h.mockService.List()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -55,4 +69,8 @@ func (h *handler) listMock(c *gin.Context) {
 
 	c.JSON(http.StatusOK, mocks)
 	c.Abort()
+}
+
+func (h *mockerHandler) Run(addr ...string) (err error) {
+	return h.engine.Run(addr...)
 }

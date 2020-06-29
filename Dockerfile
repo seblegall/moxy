@@ -10,4 +10,4 @@ WORKDIR /moxy
 COPY --from=builder /moxy .
 ENV MOXY_PORT=8080
 ENV MOXY_MOCK_FILE=""
-CMD ["sh", "-c", "./moxy -backend=${MOXY_BACKEND} -port=${MOXY_PORT} -mock-file=${MOXY_MOCK_FILE}"]
+CMD ["sh", "-c", "./moxy -backend=${MOXY_BACKEND} -proxy-port=${MOXY_PORT} -mock-file=${MOXY_MOCK_FILE}"]
