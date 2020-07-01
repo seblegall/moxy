@@ -24,11 +24,23 @@ func NewMockerHandler(mock *api.MockService) *mockerHandler {
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
+	h.engine.LoadHTMLGlob("templates/*")
 	h.engine.Use(cors.New(corsConfig))
-	h.engine.Use()
 
 	h.engine.GET("/moxy/api/mocks", h.listMock)
 	h.engine.POST("/moxy/api/mocks", h.addMock)
+	h.engine.GET("/moxy/dashboard", func(c *gin.Context) {
+
+		mocks, err := h.mockService.List()
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		c.HTML(200, "dashboard.gohtml", gin.H{
+			"mocks": mocks,
+		})
+	})
 
 	return h
 }

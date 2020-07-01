@@ -31,7 +31,6 @@ func NewProxyHandler(mock *api.MockService, backend config.Backend) *proxyHandle
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
 	h.engine.Use(cors.New(corsConfig))
-	h.engine.Use()
 
 	h.engine.Any("/*proxyPath", h.handleMock, h.handleProxy)
 
