@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+    <title>Moxy - Dashboard</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/ocean.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.0.2/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.0.2/jsoneditor.js"></script>
+    <style>
+        .jsoneditor {
+            border: thin solid #28A69A !important;
+        }
+        .jsoneditor-menu {
+            background-color: #28A69A !important;
+            border-bottom: 1px solid #28A69A !important;
+        }
+    </style>
+</head>
+<body>
+<nav class="teal lighten-1">
+    <div class="nav-wrapper">
+        <a href="#" class="brand-logo">Moxy Dashboard</a>
+        <ul id="nav-mobile" class="right hide-on-med-and-down">
+            <li><a href="/moxy/dashboard">Active Mocks</a></li>
+            <li class="active"><a href="/moxy/dashboard/add">Add Mock</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="row">
+    <div class="col s8 m6">
+        <h4>Add Mock</h4>
+        <hr />
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <form class="col s12">
+            <div class="row">
+                <div class="input-field col s6">
+                    <select id="method">
+                        <option value="" disabled selected>Choose an option</option>
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <label for="method">Method</label>
+                </div>
+                <div class="input-field col s6">
+                    <input id="route" type="text" class="validate">
+                    <label for="route">Route</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s6">
+                    <input id="status_code" type="number" class="validate">
+                    <label for="status_code">Expected status code</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12">
+                    <div id="jsoneditor" style="height: 500px;"></div>
+                </div>
+            </div>
+            <div class="row">
+                <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+                    <i class="material-icons right">send</i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var elems = document.querySelectorAll('select');
+        var instances = M.FormSelect.init(elems, {});
+    });
+</script>
+<script>
+    // create the editor
+    const container = document.getElementById("jsoneditor");
+    const options = {};
+    const editor = new JSONEditor(container, options);
+    editor.setMode("code");
+
+    // set json
+    const initialJson = {
+        "Array": [1, 2, 3],
+        "Boolean": true,
+        "Null": null,
+        "Number": 123,
+        "Object": {"a": "b", "c": "d"},
+        "String": "Hello World"
+    };
+    editor.set(initialJson);
+
+    // get json
+    const updatedJson = editor.get()
+</script>
+</body>
+</html>

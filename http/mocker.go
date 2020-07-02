@@ -29,8 +29,13 @@ func NewMockerHandler(mock *api.MockService) *mockerHandler {
 
 	h.engine.GET("/moxy/api/mocks", h.listMock)
 	h.engine.POST("/moxy/api/mocks", h.addMock)
-	h.engine.GET("/moxy/dashboard", func(c *gin.Context) {
+	h.engine.GET("/moxy/dashboard", h.renderDashboard)
+	h.engine.GET("/moxy/dashboard/add", h.renderAddMock)
 
+	return h
+}
+
+func (h *mockerHandler) renderDashboard(c *gin.Context) {
 		mocks, err := h.mockService.List()
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
@@ -40,9 +45,10 @@ func NewMockerHandler(mock *api.MockService) *mockerHandler {
 		c.HTML(200, "dashboard.gohtml", gin.H{
 			"mocks": mocks,
 		})
-	})
+}
 
-	return h
+func (h *mockerHandler) renderAddMock(c *gin.Context) {
+	c.HTML(200, "add_mock.gohtml", gin.H{})
 }
 
 func (h *mockerHandler) addMock(c *gin.Context) {
