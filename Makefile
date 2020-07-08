@@ -15,5 +15,16 @@ compile: ## Build the app
 	go build -o moxy
 	packr2 clean
 
+clean:
+	packr2 clean
+
+release: ## Publish a release
+	goreleaser
+	packr2 clean
+
+snapshot:
+	goreleaser --snapshot --skip-publish --rm-dist
+	packr2 clean
+
 dk-build: ## Build docker image with compiled binary (args VERSION, REPOSITORY, TAG required)
 	docker build -t moxy ./

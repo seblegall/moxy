@@ -1,0 +1,35 @@
+before:
+  hooks:
+    - packr2 clean
+    - packr2
+builds:
+  - binary: moxy
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+dockers:
+  -
+    goos: linux
+    goarch: amd64
+    goarm: ''
+    binaries:
+      - moxy
+    image_templates:
+      - 'seblegall/moxy:{{ .Tag }}'
+      - 'seblegall/moxy:v{{ .Major }}.{{ .Minor }}'
+      - 'seblegall/moxy:latest'
+    dockerfile: ReleaseDockerfile
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+env_files:
+  github_token: ./.env

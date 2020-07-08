@@ -1,0 +1,6 @@
+FROM alpine:latest
+WORKDIR /moxy
+COPY moxy /moxy/
+ENV MOXY_PORT=8080
+ENV MOXY_MOCK_FILE=""
+CMD ["sh", "-c", "./moxy -backend=${MOXY_BACKEND} -proxy-port=${MOXY_PORT} -mock-file=${MOXY_MOCK_FILE}"]
