@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -66,7 +67,16 @@ func (h *mockerHandler) addMock(c *gin.Context) {
 		return
 	}
 
-	mock, err := h.mockService.Add(query.Method, query.Path, query.StatusCode,query.Body)
+	var out bytes.Buffer
+	var body json.RawMessage
+	err := json.Indent(&out, query.Body, "", "     ")
+	if err != nil {
+		body = query.Body
+	} else {
+		body = out.Bytes()
+	}
+
+	mock, err := h.mockService.Add(query.Method, query.Path, query.StatusCode,body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		c.Abort()

@@ -22,6 +22,10 @@
             background-color: #28A69A !important;
             border-bottom: 1px solid #28A69A !important;
         }
+
+        #feedback div {
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -43,7 +47,8 @@
 </div>
 <div class="container">
     <div class="row">
-        <form class="col s12">
+        <form class="col s12" id="add_mock">
+            <div class="row" id="feedback"></div>
             <div class="row">
                 <div class="input-field col s6">
                     <select id="method">
@@ -73,7 +78,7 @@
                 </div>
             </div>
             <div class="row">
-                <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+                <button class="btn waves-effect waves-light" type="submit" name="action" id="submit">Submit
                     <i class="material-icons right">send</i>
                 </button>
             </div>
@@ -81,12 +86,13 @@
     </div>
 </div>
 <script>
+
+    //Preload form
     document.addEventListener('DOMContentLoaded', function() {
         var elems = document.querySelectorAll('select');
         var instances = M.FormSelect.init(elems, {});
     });
-</script>
-<script>
+
     // create the editor
     const container = document.getElementById("jsoneditor");
     const options = {};
@@ -104,8 +110,49 @@
     };
     editor.set(initialJson);
 
-    // get json
-    const updatedJson = editor.get()
+    const getFormData = function(){
+        const method = document.getElementById("method").value;
+        const route = document.getElementById("route").value;
+        const status = parseInt(document.getElementById("status_code").value);
+        const body = editor.get();
+        return {
+            path: route,
+            method: method,
+            status_code: status,
+            body: body,
+        }
+    };
+
+    document.getElementById("submit").addEventListener("click", function(event){
+        event.preventDefault();
+        const data = getFormData();
+        const feedback = document.getElementById("feedback");
+
+        fetch('/moxy/api/mocks', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(function(response) {
+            if(response.ok) {
+                feedback.innerHTML = '<div class="teal accent-3">Mock have been added !</div>';
+                document.getElementById("add_mock").reset();
+                editor.set(initialJson);
+            } else {
+                response.json().then(function(body) {
+                    err = body.error.replace(/(?:\r\n|\r|\n)/g, '<br>');
+                    feedback.innerHTML = '<div class="red lighten-2">' + err + '</div>';
+                })
+
+            }
+        }).catch(function(error) {
+            console.log('Error when posting mock data ' + error.message);
+        });
+
+        window.scrollTo(0, 0);
+    });
 </script>
 </body>
 </html>
