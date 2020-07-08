@@ -3,11 +3,14 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"html/template"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gobuffalo/packr/v2"
 	"github.com/seblegall/moxy/api"
+	"github.com/sirupsen/logrus"
 )
 
 type mockerHandler struct {
@@ -25,15 +28,39 @@ func NewMockerHandler(mock *api.MockService) *mockerHandler {
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Authorization", "Remote-User")
-	h.engine.LoadHTMLGlob("templates/*")
+
+	t, err := loadTemplate()
+	if err != nil {
+		logrus.Fatal(err.Error())
+	}
+	h.engine.SetHTMLTemplate(t)
 	h.engine.Use(cors.New(corsConfig))
 
 	h.engine.GET("/moxy/api/mocks", h.listMock)
 	h.engine.POST("/moxy/api/mocks", h.addMock)
+	h.engine.Any("/", func(c *gin.Context) {
+		c.Redirect(301, "/moxy/dashboard")
+	})
 	h.engine.GET("/moxy/dashboard", h.renderDashboard)
 	h.engine.GET("/moxy/dashboard/add", h.renderAddMock)
 
 	return h
+}
+
+func loadTemplate() (*template.Template, error) {
+	t := template.New("")
+	box := packr.New("myBox", "../templates")
+	for _, file := range box.List() {
+		h, err := box.FindString(file)
+		if err != nil {
+			return nil, err
+		}
+		t, err = t.New(file).Parse(h)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return t, nil
 }
 
 func (h *mockerHandler) renderDashboard(c *gin.Context) {
